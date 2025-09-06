@@ -1,0 +1,130 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Park {
+  id         String      @id @default(uuid())
+  name       String
+  location   String
+  passes     Pass[]
+  storeParks StorePark[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("parks")
+}
+
+model Pass {
+  id           String        @id @default(uuid())
+  type         PassType
+  qrCode       String        @unique
+  credits      Int
+  parkId       String
+  validDate    DateTime
+  members      Member[]
+  consumptions Consumption[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  park Park @relation(fields: [parkId], references: [id])
+
+  @@map("passes")
+}
+
+model Member {
+  id           String        @id @default(uuid())
+  firstName    String
+  lastName     String
+  birthDate    DateTime
+  nationality  String
+  personType   PersonType
+  passId       String
+  pass         Pass          @relation(fields: [passId], references: [id])
+  consumptions Consumption[]
+
+  @@map("members")
+}
+
+model Consumption {
+  id        String   @id @default(uuid())
+  passId    String
+  memberId  String?
+  location  String
+  item      String
+  amount    Int
+  createdAt DateTime @default(now())
+
+  pass   Pass    @relation(fields: [passId], references: [id])
+  member Member? @relation(fields: [memberId], references: [id])
+
+  @@map("consumptions")
+}
+
+model Owner {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  stores    Store[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("owners")
+}
+
+model Store {
+  id         String      @id @default(uuid())
+  name       String
+  location   String?
+  ownerId    String
+  owner      Owner       @relation(fields: [ownerId], references: [id])
+  products   Product[]
+  storeParks StorePark[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("stores")
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  credits   Int
+  stock     Int
+  category  String?
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+model StorePark {
+  id      String @id @default(uuid())
+  storeId String
+  parkId  String
+
+  store Store @relation(fields: [storeId], references: [id])
+  park  Park  @relation(fields: [parkId], references: [id])
+
+  @@map("store_parks")
+}
+
+enum PassType {
+  GROUP
+  INDIVIDUAL
+}
+
+enum PersonType {
+  BEBE
+  NINO
+  JOVEN
+  ADULTO
+  TERCERA_EDAD
+}
